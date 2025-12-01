@@ -1,12 +1,25 @@
-NotesApp – Mini Projet DevOps (Ansible + Terraform + Kubernetes + Docker)
+# NotesApp – Mini Projet DevOps (Ansible, Terraform, Kubernetes)
 
-Université Internationale de Rabat – ING5
-Encadrant : Pr. EL MENDILI
+Projet ING5 – Université Internationale de Rabat
 
-Ce projet met en place un déploiement entièrement automatisé d’une application NotesApp (backend Flask + frontend Nginx + PostgreSQL) sur une machine virtuelle Azure, orchestrée avec Kubernetes (Minikube).
-L'installation, la configuration, la construction des images et le déploiement sont automatisés via Ansible et Terraform.
+---
 
- 1. Structure du Repository
+## 📌 Description du projet
+
+Déploiement automatisé d’une application **NotesApp** (Backend Flask + Frontend Nginx + PostgreSQL) dans une VM Azure.
+L’infrastructure est automatisée via :
+
+* **Ansible** → installation & orchestration
+* **Terraform** → ressources Kubernetes
+* **Docker** → images backend / frontend
+* **Kubernetes (Minikube)** → orchestration des conteneurs
+* **Nginx Ingress + MetalLB** → exposition HTTP de l’application
+
+---
+
+## 📁 Structure du dépôt
+
+```
 notesapp/
 │
 ├── ansible/
@@ -31,138 +44,104 @@ notesapp/
 │       └── nginx/Dockerfile
 │
 └── README.md
+```
 
-2. Outils utilisés
-Outil	Rôle
-Docker	Containerisation du backend et frontend
-Minikube	Cluster Kubernetes local dans la VM Azure
-Kubernetes	Orchestration des pods / services
-Terraform	Infrastructure as Code pour générer les ressources K8s
-Ansible	Automatisation complète du provisioning et des déploiements
-Nginx Ingress	Exposition de l’application via un hôte HTTP
-MetalLB	LoadBalancer pour Minikube (IP externe : 192.168.49.2)
-🚀 3. Déploiement Automatisé
-3.1 Prérequis
+---
 
-VM Azure Ubuntu 22.04
+## ⚙️ Déploiement automatisé
 
-Accès SSH avec clé
+### 1️⃣ Lancer le playbook Ansible
 
-Ports sortants ouverts
-
-4GB RAM minimum pour Minikube
-
-3.2 Lancer le playbook Ansible
-
-Depuis la VM Azure :
-
+```bash
 cd ~/notesapp/ansible
 ansible-playbook -i inventory.ini playbook.yml
+```
 
+### Ce que le playbook configure automatiquement :
 
-Le playbook effectue automatiquement :
+* Installation de Docker, Minikube, kubectl, Helm, Terraform
+* Construction des images Docker dans Minikube
+* Déploiement Kubernetes via Terraform
+* Mise en place de l’Ingress Controller
 
-Installation de Docker
+---
 
-Installation de Minikube, kubectl, Helm, Terraform
+## 🌐 Accès à l’application (via tunnel SSH)
 
-Lancement de Minikube
+Depuis votre machine **locale** :
 
-Construction des images Docker dans Minikube
-
-terraform init + apply
-
-Déploiement complet de l'application
-
-4. Accès à l’Application via Tunnel SSH
-
-Azure ne permet pas l’accès direct à l’IP locale de Minikube.
-Un tunnel SSH est nécessaire.
-
-Depuis votre machine locale :
-
+```bash
 ssh -L 8080:192.168.49.2:80 azureuser@<public-ip>
+```
 
+Puis accéder à :
+👉 [http://localhost:8080](http://localhost:8080)
 
-Puis ouvrir :
+---
 
-http://localhost:8080
+## 🔍 Vérifications Kubernetes
 
-5. Vérifications Kubernetes
+### Pods
 
-Depuis la VM Azure :
-
-Pods
+```bash
 kubectl get pods -n notesapp
+```
 
-Services
+### Services
+
+```bash
 kubectl get svc -n notesapp
+```
 
-Ingress
+### Ingress
+
+```bash
 kubectl get ingress -n notesapp
+```
 
-Tout le namespace
+### Tout le namespace
+
+```bash
 kubectl get all -n notesapp
+```
 
-6. Architecture
-Utilisateurs → Tunnel SSH → Nginx Ingress → Frontend (Nginx)
-                                         └→ Backend (Flask)
+---
+
+## 🧱 Architecture
+
+```
+Localhost → Tunnel SSH → Ingress NGINX → Frontend (Nginx)
+                                           └→ Backend (Flask)
                                                     └→ PostgreSQL
+```
 
+Minikube exécute tout à l'intérieur de la VM Azure.
 
-Le tout exécuté dans Minikube à l’intérieur de la VM Azure.
+---
 
-7. Infrastructure gérée par Terraform
+## 🧪 Captures requises (rapport PDF)
 
-Terraform génère et applique automatiquement :
+* Accès navigateur → `http://localhost:8080`
+* Résultat des commandes :
 
-Deployments (API + Frontend)
+  * `kubectl get pods -n notesapp`
+  * `kubectl get svc -n notesapp`
+  * `kubectl get ingress -n notesapp`
 
-Service ClusterIP
+---
 
-Volume et PersistentVolumeClaim
+## 🏁 Conclusion
 
-Secret PostgreSQL
+Ce mini-projet met en œuvre :
 
-Ingress (host = notes.<ip>.nip.io ou accès local via tunnel)
+* Automatisation (Ansible)
+* Infrastructure as Code (Terraform)
+* Orchestration (Kubernetes)
+* Containerisation (Docker)
+* Exposition via Ingress
 
-Et s’exécute depuis Ansible :
+Un pipeline complet, reproductible et opérationnel dans une VM Azure.
 
-terraform init
-terraform apply -auto-approve -var="ingress_host=<value>"
+---
 
-8. Commandes utiles
-Redémarrer Minikube
-minikube delete
-minikube start --driver=docker
-
-Voir les logs d’un pod
-kubectl logs <pod> -n notesapp
-
-Voir l’ingress
-kubectl describe ingress notesapp-ingress -n notesapp
-
-
-9. Conclusion
-
-Ce mini-projet met en œuvre une chaîne DevOps complète comprenant :
-
-Automatisation (Ansible)
-
-Infrastructure as Code (Terraform)
-
-Containerisation (Docker)
-
-Orchestration (Kubernetes)
-
-Exposition via Ingress
-
-Déploiement reproductible dans une VM Azure
-
-Le tout permettant un déploiement entièrement automatisé, sans intervention manuelle.
-
-Contact
-
-Projet réalisé par :
-Othmane B. – ING5 Cloud Computing & Virtualization
-Université Internationale de Rabat
+**Projet réalisé par : Othmane B. – ING5 Cloud Computing & Virtualization**
