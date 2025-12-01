@@ -119,14 +119,20 @@ Minikube exécute tout à l'intérieur de la VM Azure.
 
 ---
 
-## 🧪 Captures requises (rapport PDF)
+## 🧪 Captures :
 
 * Accès navigateur → `http://localhost:8080`
+* <img width="1918" height="1020" alt="Screenshot 2025-12-01 012414" src="https://github.com/user-attachments/assets/cbd6ed41-6c12-4da1-ab7e-c3e4ddcb806e" />
+
 * Résultat des commandes :
 
   * `kubectl get pods -n notesapp`
   * `kubectl get svc -n notesapp`
   * `kubectl get ingress -n notesapp`
+  * <img width="938" height="115" alt="Screenshot 2025-12-01 144530" src="https://github.com/user-attachments/assets/5bb3355c-90e2-4e94-bb66-5069cfef2f2e" />
+<img width="955" height="398" alt="Screenshot 2025-12-01 144511" src="https://github.com/user-attachments/assets/6234fe52-bc7e-4571-bc11-12eaf615afe7" />
+<img width="933" height="763" alt="Screenshot 2025-12-01 144450" src="https://github.com/user-attachments/assets/b5759856-439e-4117-9d38-4282a7eaa424" />
+
 
 ---
 
