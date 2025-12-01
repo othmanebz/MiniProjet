@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>NotesApp – Mini-projet Cloud</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #0f172a;
+            color: #e5e7eb;
+            margin: 0;
+            padding: 2rem;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        .card {
+            max-width: 720px;
+            margin: 0 auto;
+            background: #020617;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+        }
+        .note {
+            border: 1px solid #1f2937;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+            background: #111827;
+        }
+        .note-title {
+            font-weight: 600;
+        }
+        form {
+            margin-top: 1.5rem;
+            display: grid;
+            gap: 0.5rem;
+        }
+        input, textarea, button {
+            font-family: inherit;
+        }
+        input, textarea {
+            border-radius: 0.5rem;
+            border: 1px solid #1f2937;
+            padding: 0.5rem 0.75rem;
+            background: #0b1120;
+            color: #e5e7eb;
+        }
+        button {
+            border-radius: 0.5rem;
+            border: none;
+            padding: 0.6rem 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: #22c55e;
+            color: #022c22;
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .status {
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+            color: #a5b4fc;
+        }
+    </style>
+</head>
+<body>
+    <h1>NotesApp – Minikube · Terraform · Ansible</h1>
+
+    <div class="card">
+        <div class="status" id="status">Chargement des notes…</div>
+
+        <div id="notes"></div>
+
+        <form id="note-form">
+            <input type="text" id="title" placeholder="Titre de la note" required />
+            <textarea id="content" rows="3" placeholder="Contenu" required></textarea>
+            <button type="submit">Ajouter une note</button>
+        </form>
+    </div>
+
+    <script>
+        const notesContainer = document.getElementById("notes");
+        const statusEl = document.getElementById("status");
+        const form = document.getElementById("note-form");
+        const titleInput = document.getElementById("title");
+        const contentInput = document.getElementById("content");
+
+        const API_BASE = "/api";
+
+        async function loadNotes() {
+            try {
+                statusEl.textContent = "Chargement des notes…";
+                const res = await fetch(`${API_BASE}/notes`);
+                if (!res.ok) throw new Error("Requête échouée");
+                const notes = await res.json();
+                statusEl.textContent = `Notes chargées (${notes.length}).`;
+                renderNotes(notes);
+            } catch (err) {
+                statusEl.textContent = "Erreur lors du chargement des notes.";
+                console.error(err);
+            }
+        }
+
+        function renderNotes(notes) {
+            notesContainer.innerHTML = "";
+            notes.forEach((n) => {
+                const div = document.createElement("div");
+                div.className = "note";
+                div.innerHTML = `
+                    <div class="note-title">${n.title}</div>
+                    <div>${n.content}</div>
+                `;
+                notesContainer.appendChild(div);
+            });
+        }
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const title = titleInput.value.trim();
+            const content = contentInput.value.trim();
+            if (!title || !content) return;
+
+            try {
+                const res = await fetch(`${API_BASE}/notes`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ title, content }),
+                });
+                if (!res.ok) throw new Error("Erreur API");
+                titleInput.value = "";
+                contentInput.value = "";
+                await loadNotes();
+            } catch (err) {
+                alert("Erreur lors de la création de la note.");
+                console.error(err);
+            }
+        });
+
+        loadNotes();
+    </script>
+</body>
+</html>
