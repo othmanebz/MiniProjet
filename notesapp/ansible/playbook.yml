@@ -1,1 +1,105 @@
-playbook
+---
+- name: Provision NotesApp stack on Azure VM
+  hosts: local
+  become: true
+
+  vars:
+    project_root: /home/azureuser/notesapp
+    terraform_dir: /home/azureuser/notesapp/terraform
+    kubeconfig_path: /home/azureuser/.kube/config
+
+  tasks:
+    - name: Install base packages
+      apt:
+        name:
+          - curl
+          - ca-certificates
+          - apt-transport-https
+        update_cache: true
+        state: present
+
+    - name: Install Docker (engine)
+      apt:
+        name:
+          - docker.io
+        state: present
+
+    - name: Add azureuser to docker group
+      user:
+        name: azureuser
+        groups: docker
+        append: true
+
+    - name: Install kubectl
+      get_url:
+        url: https://dl.k8s.io/release/v1.30.0/bin/linux/amd64/kubectl
+        dest: /usr/local/bin/kubectl
+        mode: "0755"
+
+    - name: Install Minikube
+      get_url:
+        url: https://storage.googleapis.com/minikube/releases/v1.34.0/minikube-linux-amd64
+        dest: /usr/local/bin/minikube
+        mode: "0755"
+
+    - name: Start Minikube (docker driver)
+      become: false
+      command: >
+        minikube start
+        --driver=docker
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      register: minikube_start
+      changed_when: "'Done!' in minikube_start.stdout or 'Starting' in minikube_start.stdout"
+
+    - name: Enable NGINX ingress addon
+      become: false
+      command: minikube addons enable ingress
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      register: ingress_addon
+      changed_when: "'enabled' in ingress_addon.stdout or 'already enabled' in ingress_addon.stdout"
+
+    # --- Build Docker images for Minikube ---
+    - name: Build Docker images inside Minikube Docker
+      become: false
+      shell: |
+        eval "$(minikube -p minikube docker-env)"
+        cd "{{ project_root }}/api"
+        docker build -t notes-api:latest .
+        cd "{{ project_root }}/frontend"
+        docker build -t notes-frontend:latest .
+      args:
+        executable: /bin/bash
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+
+    - name: Get Minikube IP
+      become: false
+      command: minikube ip
+      register: minikube_ip_cmd
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+
+    - name: Set ingress host fact
+      set_fact:
+        ingress_host: "notes.{{ minikube_ip_cmd.stdout }}.nip.io"
+
+    # --- Terraform deployment ---
+    - name: Terraform init
+      become: false
+      command: terraform init
+      args:
+        chdir: "{{ terraform_dir }}"
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+
+    - name: Terraform apply
+      become: false
+      command: >
+        terraform apply -auto-approve
+        -var="ingress_host={{ ingress_host }}"
+      args:
+        chdir: "{{ terraform_dir }}"
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
